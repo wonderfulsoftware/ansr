@@ -4,6 +4,7 @@ import * as log from 'https://deno.land/std@0.182.0/log/mod.ts'
 const port = +Deno.env.get('PORT')! || 4752
 const expectedKey = Deno.env.get('LINE_WEBHOOK_SECRET_KEY')!
 const channelAccessToken = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN')!
+const allowedDomains = Deno.env.get('ALLOWED_DOMAINS')!.split(',')
 const router = new Router()
 
 router.get('/', (context) => {
@@ -74,6 +75,20 @@ async function handleTextMessage(event: any) {
 }
 
 const app = new Application()
+
+// Deno Deploy does not currently provide the ability to delete old deployments.
+// As a workaround, we check the domain name of the request and reject it if it
+// is not the production domain.
+app.use(async (context, next) => {
+  const host = context.request.headers.get('host')
+  if (host && allowedDomains.includes(host)) {
+    await next()
+  } else {
+    context.response.status = 403
+    context.response.body = `you can only access via production domain. domain "${host}" is not allowed.`
+  }
+})
+
 app.use(router.routes())
 app.use(router.allowedMethods())
 app.addEventListener('listen', () => {
