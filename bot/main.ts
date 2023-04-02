@@ -6,6 +6,12 @@ router.get('/', (context) => {
   context.response.body = 'hello world'
 })
 
+router.post('/webhook/line', async (context) => {
+  const body = context.request.body({ type: 'json' })
+  console.log('=>', await body.value)
+  context.response.body = 'ok'
+})
+
 const app = new Application()
 app.use(router.routes())
 app.use(router.allowedMethods())
