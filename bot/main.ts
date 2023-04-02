@@ -85,7 +85,7 @@ app.use(async (context, next) => {
     await next()
   } else {
     context.response.status = 403
-    context.response.body = 'you can only access via production domain'
+    context.response.body = `you can only access via production domain. domain "${host}" is not allowed.`
   }
 })
 
