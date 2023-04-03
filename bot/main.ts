@@ -1,6 +1,7 @@
 import { Application, Router } from 'https://deno.land/x/oak@v12.1.0/mod.ts'
 import * as log from 'https://deno.land/std@0.182.0/log/mod.ts'
 import ky from 'https://esm.sh/ky@0.33.3'
+import { handle } from './logic.ts'
 
 const port = +Deno.env.get('PORT')! || 4752
 const expectedKey = Deno.env.get('LINE_WEBHOOK_SECRET_KEY')!
@@ -22,7 +23,6 @@ router.post('/webhook/line', async (context) => {
   }
 
   const body = await context.request.body({ type: 'json' }).value
-  log.info(`=> ${JSON.stringify(body, null, 2)}`)
 
   await handleEvents(body.events)
 
@@ -31,10 +31,14 @@ router.post('/webhook/line', async (context) => {
 
 async function handleEvents(events: any[]) {
   for (const event of events) {
-    switch (event.type) {
-      case 'message':
-        await handleMessageEvent(event)
-        break
+    try {
+      switch (event.type) {
+        case 'message':
+          await handleMessageEvent(event)
+          break
+      }
+    } catch (error) {
+      log.error(error)
     }
   }
 }
@@ -48,10 +52,29 @@ async function handleMessageEvent(event: any) {
 }
 
 async function handleTextMessage(event: any) {
-  const text = event.message.text
+  const text = event.message.text.trim()
   const replyToken = event.replyToken
   const userId = event.source.userId
   const url = `https://api.line.me/v2/bot/message/reply`
+  const result = await handle(
+    {
+      userId,
+      text,
+    },
+    {
+      resolveDisplayName: async (userId) => {
+        const profile = (await ky
+          .get(`https://api.line.me/v2/bot/profile/${userId}`, {
+            headers: {
+              Authorization: `Bearer ${channelAccessToken}`,
+            },
+          })
+          .json()) as any
+        return profile.displayName
+      },
+    },
+  )
+  log.info(`${userId} "${text}" => "${result}"`)
   const response = await ky.post(url, {
     headers: {
       Authorization: `Bearer ${channelAccessToken}`,
@@ -61,11 +84,12 @@ async function handleTextMessage(event: any) {
       messages: [
         {
           type: 'text',
-          text: `it works -- ${text}`,
+          text: result,
         },
       ],
     },
   })
+  void response
 }
 
 const app = new Application()
