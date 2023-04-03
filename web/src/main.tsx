@@ -6,16 +6,20 @@ import { FirebaseAppProvider, AuthProvider, DatabaseProvider } from 'reactfire'
 import './index.css'
 import { app, auth, db } from './firebase'
 import { signInWithCustomToken } from 'firebase/auth'
+import { QueryClientProvider } from '@tanstack/react-query'
+import { queryClient } from './queryClient'
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>
-    <FirebaseAppProvider firebaseApp={app}>
-      <AuthProvider sdk={auth}>
-        <DatabaseProvider sdk={db}>
-          <App />
-        </DatabaseProvider>
-      </AuthProvider>
-    </FirebaseAppProvider>
+    <QueryClientProvider client={queryClient}>
+      <FirebaseAppProvider firebaseApp={app}>
+        <AuthProvider sdk={auth}>
+          <DatabaseProvider sdk={db}>
+            <App />
+          </DatabaseProvider>
+        </AuthProvider>
+      </FirebaseAppProvider>
+    </QueryClientProvider>
   </React.StrictMode>,
 )
 

@@ -1,14 +1,9 @@
-import 'google-application-credentials-base64'
 import { Handler } from '@netlify/functions'
 import axios from 'axios'
 import { Env } from 'lazy-strict-env'
 import { z } from 'zod'
-import * as admin from 'firebase-admin'
-
-admin.initializeApp({
-  databaseURL:
-    'https://answerbuzzer-default-rtdb.asia-southeast1.firebasedatabase.app',
-})
+import { Response } from '@netlify/functions/dist/function/response'
+import { admin } from '../_shared/firebase'
 
 const env = Env(
   z.object({
@@ -18,7 +13,7 @@ const env = Env(
 )
 
 // Handle LINE Login OAuth callback
-export const handler: Handler = async (event, context) => {
+export const handler: Handler = async (event, context): Promise<Response> => {
   const params = event.queryStringParameters!
   if (params.error) {
     return {
