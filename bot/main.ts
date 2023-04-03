@@ -1,5 +1,6 @@
 import { Application, Router } from 'https://deno.land/x/oak@v12.1.0/mod.ts'
 import * as log from 'https://deno.land/std@0.182.0/log/mod.ts'
+import ky from 'https://esm.sh/ky@0.33.3'
 
 const port = +Deno.env.get('PORT')! || 4752
 const expectedKey = Deno.env.get('LINE_WEBHOOK_SECRET_KEY')!
@@ -50,27 +51,20 @@ async function handleTextMessage(event: any) {
   const replyToken = event.replyToken
   const userId = event.source.userId
   const url = `https://api.line.me/v2/bot/message/reply`
-  const response = await fetch(url, {
-    method: 'POST',
+  const response = await ky.post(url, {
     headers: {
-      'Content-Type': 'application/json',
       Authorization: `Bearer ${channelAccessToken}`,
     },
-    body: JSON.stringify({
+    json: {
       replyToken,
       messages: [
         {
           type: 'text',
-          text: `You said: ${text}`,
+          text: `it works -- ${text}`,
         },
       ],
-    }),
+    },
   })
-  if (!response.ok) {
-    log.error(
-      `Failed to reply to ${userId}: ${response.status} ${response.statusText}`,
-    )
-  }
 }
 
 const app = new Application()
