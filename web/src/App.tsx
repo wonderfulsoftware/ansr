@@ -1,35 +1,65 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
+import { ReactNode, useState } from 'react'
 import viteLogo from '/vite.svg'
 import { Icon } from '@iconify-icon/react'
-import './App.css'
+import { useUser } from 'reactfire'
+import { signOut } from 'firebase/auth'
+import { auth } from './firebase'
 
 function App() {
   const [count, setCount] = useState(0)
 
+  return <Layout>meow</Layout>
+}
+
+export interface Layout {
+  children?: ReactNode
+}
+export function Layout(props: Layout) {
   return (
-    <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React <Icon icon="codicon:github" inline /></h1>
-      <div className="card">
-        <button className='btn btn-primary' onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </div>
+    <>
+      <header className="p-3 text-bg-dark">
+        <div className="container">
+          <div className="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+            <span className="d-flex align-items-center mb-2 mb-lg-0 text-white text-decoration-none">
+              <span className="fs-4">ansr</span>
+            </span>
+
+            <div className="ms-auto text-end d-flex gap-2">
+              <AuthBar />
+            </div>
+          </div>
+        </div>
+      </header>
+    </>
+  )
+}
+export function AuthBar() {
+  const { status, data: user } = useUser()
+
+  if (status !== 'success') {
+    return <></>
+  }
+
+  if (!user) {
+    return (
+      <button
+        type="button"
+        className="btn btn-outline-light me-2"
+        onClick={() => location.replace('/.netlify/functions/line-login')}
+      >
+        Login
+      </button>
+    )
+  }
+
+  return (
+    <button
+      type="button"
+      className="btn btn-outline-secondary me-2"
+      onClick={() => signOut(auth)}
+    >
+      Log out ({user.displayName})
+    </button>
   )
 }
 
