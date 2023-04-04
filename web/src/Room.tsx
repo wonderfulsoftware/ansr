@@ -13,8 +13,8 @@ import {
   getRoomRef,
   getUsersRef,
 } from './firebaseDatabase'
-import { push, serverTimestamp, set, update } from 'firebase/database'
-import { Fragment, ReactNode, useCallback, useState } from 'react'
+import { child, push, serverTimestamp, set, update } from 'firebase/database'
+import { Fragment, ReactNode, useCallback, useMemo, useState } from 'react'
 import {
   useDatabaseListData,
   useDatabaseObject,
@@ -306,7 +306,7 @@ function Question(props: Question) {
   const questionRef = getQuestionRef(roomId, questionId)
   const question = useDatabaseObjectData<QuestionModel | null>(questionRef)
   const answersRef = getQuestionAnswersRef(roomId, questionId)
-  const answers = useDatabaseListData<QuestionAnswersModel>(answersRef)
+  const answers = useDatabaseListData<QuestionAnswersModel[string]>(answersRef)
   const [showAnswers, setShowAnswers] = useState(false)
   if (question.status === 'loading') {
     return <div>Loading…</div>
@@ -354,11 +354,15 @@ function Question(props: Question) {
                       className="form-check-input"
                       type="checkbox"
                       id={`correct${n}`}
-                      checked={data.correctChoices?.[`choice${n}`]}
+                      checked={!!data.correctChoices?.[`choice${n}`]}
                       onChange={(e) => {
-                        update(questionRef, {
-                          [`correctChoices.choice${n}`]: e.target.checked,
-                        })
+                        set(
+                          child(
+                            child(questionRef, 'correctChoices'),
+                            `choice${n}`,
+                          ),
+                          e.target.checked,
+                        )
                       }}
                       disabled={active}
                     />
@@ -395,6 +399,95 @@ function Question(props: Question) {
           Show answers ({numAnswers})
         </label>
       </div>
+
+      <div className="mt-2">
+        <div className="card">
+          <div className="card-body">
+            <AnswerChart
+              numChoices={numChoices}
+              answers={answers.data || []}
+              correctChoices={data.correctChoices}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 d-flex flex-wrap gap-2">
+        <button
+          className="btn btn-sm btn-outline-danger"
+          onClick={() => {
+            if (!confirm('All answers will be deleted.')) return
+            set(answersRef, null)
+          }}
+        >
+          <Icon inline icon={'codicon:clear-all'} /> Clear all answers
+        </button>
+        <button
+          className="btn btn-sm btn-outline-danger"
+          onClick={() => {
+            if (!confirm('This question will be deleted.')) return
+            set(questionRef, null)
+            set(answersRef, null)
+          }}
+        >
+          <Icon inline icon={'bi:trash3'} /> Delete question
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export interface AnswerChart {
+  numChoices: number
+  answers: QuestionAnswersModel[string][]
+  correctChoices: QuestionModel['correctChoices']
+}
+
+export function AnswerChart(props: AnswerChart) {
+  const { tally, max } = useMemo(() => {
+    const tally: Record<string, number> = {}
+    let max = 1
+    for (const answer of props.answers) {
+      tally[answer.choice] = (tally[answer.choice] || 0) + 1
+      max = Math.max(max, tally[answer.choice])
+    }
+    return { tally, max }
+  }, [props.answers, props.numChoices])
+  return (
+    <div
+      className="d-flex gap-3 justify-content-center pt-3"
+      style={{ height: '320px' }}
+    >
+      {Array.from({ length: props.numChoices }, (_, i) => i + 1).map((n) => {
+        const count = tally[n] || 0
+        const height = (2 + 98 * (count / max)).toFixed(2) + '%'
+        const correct = props.correctChoices?.[`choice${n}`]
+        return (
+          <div
+            key={n}
+            className="d-flex flex-column text-center"
+            style={{ width: '2.5em' }}
+          >
+            <div className="flex-grow-1 d-flex flex-column justify-content-end">
+              <div
+                className={clsx(
+                  'position-relative rounded',
+                  correct ? 'bg-success' : 'bg-primary',
+                )}
+                style={{ height }}
+              >
+                <div
+                  className="position-absolute top-0 start-0 end-0 text-center"
+                  style={{ marginTop: '-1.5em' }}
+                >
+                  {count}
+                </div>
+              </div>
+            </div>
+            <div className="flex-shrink-0">{n}</div>
+          </div>
+        )
+      })}
     </div>
   )
 }
