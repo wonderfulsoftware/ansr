@@ -3,15 +3,10 @@ import { Icon } from '@iconify-icon/react'
 import { useUser } from 'reactfire'
 import { signOut } from 'firebase/auth'
 import { auth, db } from './firebase'
-import {
-  RouterProvider,
-  createHashRouter,
-  useNavigate,
-  useParams,
-} from 'react-router-dom'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { RouterProvider, createHashRouter, useNavigate } from 'react-router-dom'
+import { useMutation } from '@tanstack/react-query'
 import { push, ref, serverTimestamp, set } from 'firebase/database'
-import { trpc } from './trpc'
+import { Room } from './Room'
 
 const router = createHashRouter([
   {
@@ -98,23 +93,6 @@ function HomeCta() {
           </a>
         </p>
       )}
-    </>
-  )
-}
-
-function Room() {
-  const params = useParams()
-  const pinQuery = useQuery({
-    queryKey: ['pin'],
-    queryFn: async () => {
-      return await trpc.getRoomPin.query({ roomId: params.roomId! })
-    },
-  })
-  return (
-    <>
-      <div className="container">
-        <h1>Room PIN: {pinQuery.data?.pin || '…'}</h1>
-      </div>
     </>
   )
 }
