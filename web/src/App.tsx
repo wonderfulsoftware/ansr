@@ -6,7 +6,8 @@ import { auth, db } from './firebase'
 import { RouterProvider, createHashRouter, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { push, ref, serverTimestamp, set } from 'firebase/database'
-import { Room } from './Room'
+import { Room, RoomInfo, RoomQuestion, RoomUsers } from './Room'
+import { getRoomsRef } from './firebaseDatabase'
 
 const router = createHashRouter([
   {
@@ -16,6 +17,11 @@ const router = createHashRouter([
   {
     path: '/rooms/:roomId',
     element: <Room />,
+    children: [
+      { index: true, element: <RoomInfo /> },
+      { path: 'users', element: <RoomUsers /> },
+      { path: 'questions/:questionId', element: <RoomQuestion /> },
+    ],
   },
 ])
 
@@ -45,7 +51,7 @@ function HomeCta() {
       if (!user) {
         throw new Error('User is not logged in.')
       }
-      const room = await push(ref(db, 'environments/production/rooms'), {
+      const room = await push(getRoomsRef(), {
         ownerId: user.uid,
         createdAt: serverTimestamp(),
       })
@@ -100,6 +106,7 @@ function HomeCta() {
 export interface Layout {
   children?: ReactNode
 }
+
 export function Layout(props: Layout) {
   return (
     <>
