@@ -237,9 +237,7 @@ function useRoomUsers(roomId: string) {
   const usersRef = getUsersRef(roomId)
   const users = useDatabaseListData<{ id: string; displayName: string }>(
     usersRef,
-    {
-      idField: 'id',
-    },
+    { idField: 'id' },
   )
   return users.data || []
 }
@@ -302,11 +300,15 @@ interface Question {
   questionId: string
 }
 function Question(props: Question) {
+  const navigate = useNavigate()
   const { roomId, questionId } = props
   const questionRef = getQuestionRef(roomId, questionId)
   const question = useDatabaseObjectData<QuestionModel | null>(questionRef)
   const answersRef = getQuestionAnswersRef(roomId, questionId)
-  const answers = useDatabaseListData<QuestionAnswersModel[string]>(answersRef)
+  const answers = useDatabaseListData<QuestionAnswersModel[string]>(
+    answersRef,
+    { idField: 'id' },
+  )
   const [showAnswers, setShowAnswers] = useState(false)
   if (question.status === 'loading') {
     return <div>Loading…</div>
@@ -428,6 +430,7 @@ function Question(props: Question) {
             if (!confirm('This question will be deleted.')) return
             set(questionRef, null)
             set(answersRef, null)
+            navigate(`/rooms/${roomId}`)
           }}
         >
           <Icon inline icon={'bi:trash3'} /> Delete question
