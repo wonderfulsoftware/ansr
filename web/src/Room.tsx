@@ -4,13 +4,17 @@ import { trpc } from './trpc'
 import { clsx } from 'clsx'
 import { Icon } from '@iconify-icon/react'
 import {
+  QuestionAnswersModel,
+  QuestionModel,
   getActiveQuestionIdRef,
+  getQuestionAnswersRef,
+  getQuestionRef,
   getQuestionsRef,
   getRoomRef,
   getUsersRef,
 } from './firebaseDatabase'
-import { push, serverTimestamp, set } from 'firebase/database'
-import { Fragment, ReactNode, useCallback } from 'react'
+import { push, serverTimestamp, set, update } from 'firebase/database'
+import { Fragment, ReactNode, useCallback, useState } from 'react'
 import {
   useDatabaseListData,
   useDatabaseObject,
@@ -41,12 +45,13 @@ function RoomDataSubscriber(props: RoomDataSubscriber) {
 }
 
 function useRoomPin(roomId: string) {
-  return useQuery({
+  const pin = useQuery({
     queryKey: ['pin'],
     queryFn: async () => {
       return await trpc.getRoomPin.query({ roomId: roomId })
     },
   }).data?.pin
+  return pin ? `R${pin}` : undefined
 }
 
 export interface RoomNav {
@@ -89,15 +94,13 @@ export function RoomNav(props: RoomNav) {
           <strong>Room {props.pin}</strong>
         </a>
       </li>
-      <li className="nav-item">{tab('Information', `/rooms/${roomId}`)}</li>
-      <li className="nav-item">
-        {tab(
-          <>
-            Users (<UserCount roomId={roomId} />)
-          </>,
-          `/rooms/${roomId}/users`,
-        )}
-      </li>
+      {tab('Information', `/rooms/${roomId}`)}
+      {tab(
+        <>
+          Users (<UserCount roomId={roomId} />)
+        </>,
+        `/rooms/${roomId}/users`,
+      )}
       <QuestionList roomId={roomId}>
         {(ids) =>
           ids.map((id, index) => (
@@ -273,7 +276,7 @@ export function RoomQuestion() {
       </h1>
       <ActiveQuestionConnector roomId={roomId} questionId={questionId}>
         {(active, toggle) => (
-          <div className="form-check form-switch lead">
+          <div className="form-check form-switch lead mb-4">
             <input
               className="form-check-input"
               type="checkbox"
@@ -288,6 +291,110 @@ export function RoomQuestion() {
           </div>
         )}
       </ActiveQuestionConnector>
+
+      <Question roomId={roomId} questionId={questionId} />
+    </div>
+  )
+}
+
+interface Question {
+  roomId: string
+  questionId: string
+}
+function Question(props: Question) {
+  const { roomId, questionId } = props
+  const questionRef = getQuestionRef(roomId, questionId)
+  const question = useDatabaseObjectData<QuestionModel | null>(questionRef)
+  const answersRef = getQuestionAnswersRef(roomId, questionId)
+  const answers = useDatabaseListData<QuestionAnswersModel>(answersRef)
+  const [showAnswers, setShowAnswers] = useState(false)
+  if (question.status === 'loading') {
+    return <div>Loading…</div>
+  }
+  if (question.status === 'error') {
+    return <ErrorAlert error={question.error} />
+  }
+
+  const data = question.data!
+  const numChoices = data.numChoices || 4
+  const numAnswers = answers.data?.length || 0
+  return (
+    <div className="d-flex flex-column gap-3">
+      <FormGroup label="Number of choices" pt0>
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+          <div className="form-check form-check-inline" key={n}>
+            <input
+              className="form-check-input"
+              type="radio"
+              id={`choices${n}`}
+              value={n}
+              checked={n === numChoices}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  update(questionRef, { numChoices: n })
+                }
+              }}
+            />
+            <label className="form-check-label" htmlFor={`choices${n}`}>
+              {n}
+            </label>
+          </div>
+        ))}
+        <FormHint>How many choices are allowed?</FormHint>
+      </FormGroup>
+      <FormGroup label="Correct choices" pt0>
+        <ActiveQuestionConnector roomId={roomId} questionId={questionId}>
+          {(active) => (
+            <>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+                .filter((n) => n <= numChoices)
+                .map((n) => (
+                  <div className="form-check form-check-inline" key={n}>
+                    <input
+                      className="form-check-input"
+                      type="checkbox"
+                      id={`correct${n}`}
+                      checked={data.correctChoices?.[`choice${n}`]}
+                      onChange={(e) => {
+                        update(questionRef, {
+                          [`correctChoices.choice${n}`]: e.target.checked,
+                        })
+                      }}
+                      disabled={active}
+                    />
+                    <label className="form-check-label" htmlFor={`correct${n}`}>
+                      {n}
+                    </label>
+                  </div>
+                ))}
+              <FormHint>
+                {active ? (
+                  <span className="opacity-50">
+                    Wait for people to answer first before setting the correct
+                    answers.
+                  </span>
+                ) : (
+                  <>Set which answers are correct (for quizzes).</>
+                )}
+              </FormHint>
+            </>
+          )}
+        </ActiveQuestionConnector>
+      </FormGroup>
+
+      <div className="form-check form-switch lead mt-4">
+        <input
+          className="form-check-input"
+          type="checkbox"
+          role="switch"
+          id="showAnswers"
+          checked={showAnswers}
+          onChange={(e) => setShowAnswers(e.target.checked)}
+        />
+        <label className="form-check-label" htmlFor="showAnswers">
+          Show answers ({numAnswers})
+        </label>
+      </div>
     </div>
   )
 }
@@ -295,12 +402,27 @@ export function RoomQuestion() {
 export interface FormGroup {
   label: ReactNode
   children?: ReactNode
+  /** Remove the top padding from the label (required for the label to align with checkbox/radio buttons properly) */
+  pt0?: boolean
 }
 export function FormGroup(props: FormGroup) {
   return (
     <div className="row">
-      <strong className="col-sm-2 col-form-label">{props.label}</strong>
-      <div className="col-sm-10">{props.children}</div>
+      <strong className={clsx('col-sm-3 col-form-label', props.pt0 && 'pt-0')}>
+        {props.label}
+      </strong>
+      <div className="col-sm-9">{props.children}</div>
+    </div>
+  )
+}
+
+export interface FormHint {
+  children?: ReactNode
+}
+export function FormHint(props: FormHint) {
+  return (
+    <div className="mt-1">
+      <small className="form-text text-muted">{props.children}</small>
     </div>
   )
 }
@@ -324,4 +446,11 @@ export function ActiveQuestionConnector(props: ActiveQuestionConnector) {
     }
   }, [activeQuestion, activeQuestionRef, questionId])
   return <>{children(activeQuestion === questionId, toggle)}</>
+}
+
+export interface ErrorAlert {
+  error: any
+}
+export function ErrorAlert(props: ErrorAlert) {
+  return <div className="alert alert-danger">{String(props.error)}</div>
 }

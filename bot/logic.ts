@@ -15,32 +15,81 @@ export async function handle(
   input: { userId: string; text: string },
   context: HandleContext,
 ) {
+  const time = Date.now()
   const { userId, text } = input
   const userState: UserState =
     (await db.get(`users/${userId}/state.json?auth=${dbSecret}`).json()) || {}
-  return userState.currentRoomId ? handleInRoom() : handleNotInRoom()
+  return userState.currentRoomId
+    ? handleInRoom(userState.currentRoomId)
+    : handleNotInRoom()
 
-  async function handleInRoom() {
-    return 'you are already in a room'
+  async function handleInRoom(roomId: string) {
+    // Enter a room PIN to join another room
+    {
+      const m = text.match(/^R(\d{5,9})$/i)
+      if (m) {
+        return handleJoinRoom(m[1], true)
+      }
+    }
+
+    const activeQuestionId = (await db
+      .get(`rooms/${roomId}/activeQuestionId.json?auth=${dbSecret}`)
+      .json()) as string | null
+    if (!activeQuestionId) {
+      return `no active question right now`
+    }
+
+    const myAnswer = (await db
+      .get(
+        `rooms/${roomId}/answers/${activeQuestionId}/${userId}.json?auth=${dbSecret}`,
+      )
+      .json()) as { choice: number } | null
+    if (myAnswer) {
+      return `you have already answered this question (your answer: ${myAnswer.choice})`
+    }
+
+    const activeQuestion = (await db
+      .get(
+        `rooms/${roomId}/questions/${activeQuestionId}.json?auth=${dbSecret}`,
+      )
+      .json()) as { numChoices?: number } | null
+    if (!activeQuestion) {
+      return `no active question right now...`
+    }
+
+    const numChoices = activeQuestion.numChoices || 4
+    const choice = parseInt(text, 10)
+    if (choice < 1 || choice > numChoices) {
+      const acceptedChoices = Array.from({ length: numChoices }).map(
+        (_, i) => i + 1,
+      )
+      return `invalid choice (accepted: ${acceptedChoices.join(', ')})`
+    }
+
+    await db.put(
+      `rooms/${roomId}/answers/${activeQuestionId}/${userId}.json?auth=${dbSecret}`,
+      { json: { choice, createdAt: time } },
+    )
+    return `your answer (${choice}) has been recorded`
   }
   async function handleNotInRoom() {
     // Enter a room PIN to join a room
     {
-      const m = text.match(/^(\d{5,9})$/)
+      const m = text.match(/^R(\d{5,9})$/i)
       if (m) {
         return handleJoinRoom(m[1])
       }
     }
 
-    return 'you are not in a aroom'
+    return 'you are not currently in a room\nenter a room PIN to join a room'
   }
-  async function handleJoinRoom(pin: string) {
+  async function handleJoinRoom(pin: string, switching = false) {
     // Resolve the PIN to a room ID
     const pinInfo = (await db
       .get(`pins/${pin}.json?auth=${dbSecret}`)
       .json()) as { roomId?: string; expiresAt: number } | null
     if (!pinInfo?.roomId) {
-      return `room with PIN ${pin} not found`
+      return `room with PIN R${pin} not found`
     }
     if (Date.now() > pinInfo.expiresAt) {
       return `room is not active`
@@ -68,7 +117,9 @@ export async function handle(
       json: roomId,
     })
 
-    return 'joined room successfully! welcome!'
+    return switching
+      ? 'switched to a new room successfully! welcome!'
+      : 'joined room successfully! welcome!'
   }
 }
 

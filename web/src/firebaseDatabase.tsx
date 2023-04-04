@@ -24,3 +24,29 @@ export function getActiveQuestionIdRef(roomId: string) {
 export function getQuestionRef(roomId: string, questionId: string) {
   return child(getQuestionsRef(roomId), questionId)
 }
+
+export function getQuestionAnswersRef(roomId: string, questionId: string) {
+  return child(getRoomRef(roomId), `answers/${questionId}`)
+}
+
+export interface QuestionModel {
+  createdAt: number
+  numChoices?: number
+  correctChoices?: Record<string, boolean>
+}
+
+export interface QuestionAnswersModel {
+  [userId: string]: {
+    choice: number
+    createdAt: number
+  }
+}
+
+export interface RoomModel {
+  questions?: {
+    [questionId: string]: QuestionModel
+  }
+  answers?: {
+    [questionId: string]: QuestionAnswersModel
+  }
+}
