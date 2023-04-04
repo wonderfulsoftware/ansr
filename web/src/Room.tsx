@@ -283,7 +283,7 @@ export function RoomQuestion() {
               onChange={toggle}
             />
             <label className="form-check-label" htmlFor="acceptingAnswers">
-              Accepting answers
+              Active &amp; accepting answers
             </label>
           </div>
         )}
