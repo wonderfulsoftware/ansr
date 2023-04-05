@@ -6,7 +6,13 @@ import { auth, db } from './firebase'
 import { RouterProvider, createHashRouter, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { push, ref, serverTimestamp, set } from 'firebase/database'
-import { Room, RoomInfo, RoomQuestion, RoomUsers } from './Room'
+import {
+  Room,
+  RoomInfo,
+  RoomLeaderboard,
+  RoomQuestion,
+  RoomUsers,
+} from './Room'
 import { getRoomsRef } from './firebaseDatabase'
 
 const router = createHashRouter([
@@ -21,6 +27,7 @@ const router = createHashRouter([
       { index: true, element: <RoomInfo /> },
       { path: 'users', element: <RoomUsers /> },
       { path: 'questions/:questionId', element: <RoomQuestion /> },
+      { path: 'leaderboard', element: <RoomLeaderboard /> },
     ],
   },
 ])

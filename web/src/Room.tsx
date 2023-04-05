@@ -6,11 +6,14 @@ import { Icon } from '@iconify-icon/react'
 import {
   QuestionAnswersModel,
   QuestionModel,
+  RoomModel,
+  UserModel,
   getActiveQuestionIdRef,
   getQuestionAnswersRef,
   getQuestionRef,
   getQuestionsRef,
   getRoomRef,
+  getUserRef,
   getUsersRef,
 } from './firebaseDatabase'
 import { child, push, serverTimestamp, set, update } from 'firebase/database'
@@ -94,10 +97,15 @@ export function RoomNav(props: RoomNav) {
           <strong>Room {props.pin}</strong>
         </a>
       </li>
-      {tab('Information', `/rooms/${roomId}`)}
       {tab(
         <>
-          Users (<UserCount roomId={roomId} />)
+          <Icon inline icon="bi:info-circle" /> Information
+        </>,
+        `/rooms/${roomId}`,
+      )}
+      {tab(
+        <>
+          <Icon inline icon="bi:people" /> Users (<UserCount roomId={roomId} />)
         </>,
         `/rooms/${roomId}/users`,
       )}
@@ -119,6 +127,12 @@ export function RoomNav(props: RoomNav) {
           <Icon inline icon="bi:plus" /> Question
         </button>
       </li>
+      {tab(
+        <>
+          <Icon inline icon="bi:list-ol" /> Leaderboard
+        </>,
+        `/rooms/${roomId}/leaderboard`,
+      )}
     </ul>
   )
 }
@@ -145,7 +159,7 @@ export function RoomInfo() {
   const params = useParams()
   const roomId = params.roomId!
   const pin = useRoomPin(roomId)
-  const lineId = '@419fosji'
+  const lineId = '@ansr'
   const messageUrl = pin
     ? `https://line.me/R/oaMessage/${lineId}/?${pin}`
     : null
@@ -233,6 +247,58 @@ export function RoomUsers() {
   )
 }
 
+export function RoomLeaderboard() {
+  const params = useParams()
+  const roomId = params.roomId!
+  const roomData = useDatabaseObjectData<RoomModel>(getRoomRef(roomId))
+  const data = roomData.data
+  const result = useMemo(() => {
+    if (!data) return []
+    const scores: Record<string, number> = {}
+    for (const [questionId, question] of Object.entries(
+      roomData.data.questions || {},
+    )) {
+      const answers = Object.entries(data.answers?.[questionId] || {}).map(
+        ([userId, answer]): AnswerListItem => {
+          return { userId, ...answer }
+        },
+      )
+      const questionScore = calculateQuestionScore(answers, question)
+      for (const [userId, score] of Object.entries(questionScore)) {
+        scores[userId] = (scores[userId] || 0) + score
+      }
+    }
+    return scoresToRankingEntry(scores)
+  }, [data])
+  return (
+    <div className="p-3">
+      <h1 className="text-center">Leaderboard</h1>
+      <div className="d-flex justify-content-center">
+        <table className="table table-bordered w-auto">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Name</th>
+              <th>Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {result.map((entry, index) => (
+              <tr key={entry.userId}>
+                <td>{index + 1}</td>
+                <td>
+                  <UserName roomId={roomId} userId={entry.userId} />
+                </td>
+                <td align="right">{entry.score}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 function useRoomUsers(roomId: string) {
   const usersRef = getUsersRef(roomId)
   const users = useDatabaseListData<{ id: string; displayName: string }>(
@@ -295,6 +361,8 @@ export function RoomQuestion() {
   )
 }
 
+type AnswerListItem = QuestionAnswersModel[string] & { userId: string }
+
 interface Question {
   roomId: string
   questionId: string
@@ -305,10 +373,9 @@ function Question(props: Question) {
   const questionRef = getQuestionRef(roomId, questionId)
   const question = useDatabaseObjectData<QuestionModel | null>(questionRef)
   const answersRef = getQuestionAnswersRef(roomId, questionId)
-  const answers = useDatabaseListData<QuestionAnswersModel[string]>(
-    answersRef,
-    { idField: 'id' },
-  )
+  const answers = useDatabaseListData<AnswerListItem>(answersRef, {
+    idField: 'userId',
+  })
   const [showAnswers, setShowAnswers] = useState(false)
   if (question.status === 'loading') {
     return <div>Loading…</div>
@@ -402,7 +469,10 @@ function Question(props: Question) {
         </label>
       </div>
 
-      <div className="mt-2">
+      <div
+        className="mt-2"
+        style={{ transition: '0.25s opacity', opacity: showAnswers ? 1 : 0 }}
+      >
         <div className="card">
           <div className="card-body">
             <AnswerChart
@@ -410,6 +480,13 @@ function Question(props: Question) {
               answers={answers.data || []}
               correctChoices={data.correctChoices}
             />
+            <div className="mt-3 d-flex justify-content-center">
+              <RoundScoreTable
+                answers={answers.data || []}
+                question={data}
+                roomId={roomId}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -442,10 +519,9 @@ function Question(props: Question) {
 
 export interface AnswerChart {
   numChoices: number
-  answers: QuestionAnswersModel[string][]
+  answers: AnswerListItem[]
   correctChoices: QuestionModel['correctChoices']
 }
-
 export function AnswerChart(props: AnswerChart) {
   const { tally, max } = useMemo(() => {
     const tally: Record<string, number> = {}
@@ -477,7 +553,7 @@ export function AnswerChart(props: AnswerChart) {
                   'position-relative rounded',
                   correct ? 'bg-success' : 'bg-primary',
                 )}
-                style={{ height }}
+                style={{ height, transition: '0.5s height ease-out' }}
               >
                 <div
                   className="position-absolute top-0 start-0 end-0 text-center"
@@ -495,12 +571,84 @@ export function AnswerChart(props: AnswerChart) {
   )
 }
 
+export interface RoundScoreTable {
+  roomId: string
+  answers: AnswerListItem[]
+  question: QuestionModel
+}
+
+export function RoundScoreTable(props: RoundScoreTable) {
+  const { answers, question } = props
+  const entries = useMemo(() => {
+    const scores: Record<string, number> = calculateQuestionScore(
+      answers,
+      question,
+    )
+    const entries = scoresToRankingEntry(scores)
+    return entries
+  }, [answers, question])
+  return (
+    <table className="table table-bordered w-auto">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        {entries.map((entry, i) => (
+          <tr key={entry.userId}>
+            <td>
+              <UserName roomId={props.roomId} userId={entry.userId} />
+            </td>
+            <td align="right">+{entry.score}</td>
+          </tr>
+        ))}
+        {entries.length === 0 && (
+          <tr>
+            <td colSpan={2}>No correct answer submission</td>
+          </tr>
+        )}
+      </tbody>
+    </table>
+  )
+}
+
 export interface FormGroup {
   label: ReactNode
   children?: ReactNode
   /** Remove the top padding from the label (required for the label to align with checkbox/radio buttons properly) */
   pt0?: boolean
 }
+function calculateQuestionScore(
+  answers: AnswerListItem[],
+  question: QuestionModel,
+) {
+  const scores: Record<string, number> = {}
+
+  // Sort answers by time
+  const sortedAnswers = [...answers].sort((a, b) => a.createdAt - b.createdAt)
+
+  // Calculate scores. First person gets 100 points, second gets 99, etc.
+  let pointsToAward = 100
+  for (const answer of sortedAnswers) {
+    const correct = question.correctChoices?.[`choice${answer.choice}`]
+    if (correct) {
+      scores[answer.userId] = (scores[answer.userId] || 0) + pointsToAward
+      pointsToAward = Math.max(0, pointsToAward - 1)
+    }
+  }
+  return scores
+}
+function scoresToRankingEntry(scores: Record<string, number>) {
+  return Object.entries(scores)
+    .map(([userId, score]) => ({
+      userId,
+      score,
+    }))
+    .sort((a, b) => b.score - a.score)
+}
+
 export function FormGroup(props: FormGroup) {
   return (
     <div className="row">
@@ -542,6 +690,16 @@ export function ActiveQuestionConnector(props: ActiveQuestionConnector) {
     }
   }, [activeQuestion, activeQuestionRef, questionId])
   return <>{children(activeQuestion === questionId, toggle)}</>
+}
+
+export interface UserName {
+  roomId: string
+  userId: string
+}
+export function UserName(props: UserName) {
+  const userRef = getUserRef(props.roomId, props.userId)
+  const { data } = useDatabaseObjectData<UserModel>(userRef)
+  return <>{data?.displayName || props.userId}</>
 }
 
 export interface ErrorAlert {

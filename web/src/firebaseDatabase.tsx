@@ -13,6 +13,10 @@ export function getUsersRef(roomId: string) {
   return child(getRoomRef(roomId), 'users')
 }
 
+export function getUserRef(roomId: string, userId: string) {
+  return child(getUsersRef(roomId), userId)
+}
+
 export function getQuestionsRef(roomId: string) {
   return child(getRoomRef(roomId), 'questions')
 }
@@ -42,11 +46,18 @@ export interface QuestionAnswersModel {
   }
 }
 
+export interface UserModel {
+  displayName: string
+}
+
 export interface RoomModel {
   questions?: {
     [questionId: string]: QuestionModel
   }
   answers?: {
     [questionId: string]: QuestionAnswersModel
+  }
+  users?: {
+    [userId: string]: UserModel
   }
 }
