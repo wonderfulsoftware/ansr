@@ -3,15 +3,17 @@ import { Icon } from '@iconify-icon/react'
 import { useUser } from 'reactfire'
 import { signOut } from 'firebase/auth'
 import { auth, db } from './firebase'
-import {
-  RouterProvider,
-  createHashRouter,
-  useNavigate,
-  useParams,
-} from 'react-router-dom'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { RouterProvider, createHashRouter, useNavigate } from 'react-router-dom'
+import { useMutation } from '@tanstack/react-query'
 import { push, ref, serverTimestamp, set } from 'firebase/database'
-import { trpc } from './trpc'
+import {
+  Room,
+  RoomInfo,
+  RoomLeaderboard,
+  RoomQuestion,
+  RoomUsers,
+} from './Room'
+import { getRoomsRef } from './firebaseDatabase'
 
 const router = createHashRouter([
   {
@@ -21,6 +23,12 @@ const router = createHashRouter([
   {
     path: '/rooms/:roomId',
     element: <Room />,
+    children: [
+      { index: true, element: <RoomInfo /> },
+      { path: 'users', element: <RoomUsers /> },
+      { path: 'questions/:questionId', element: <RoomQuestion /> },
+      { path: 'leaderboard', element: <RoomLeaderboard /> },
+    ],
   },
 ])
 
@@ -50,7 +58,7 @@ function HomeCta() {
       if (!user) {
         throw new Error('User is not logged in.')
       }
-      const room = await push(ref(db, 'environments/production/rooms'), {
+      const room = await push(getRoomsRef(), {
         ownerId: user.uid,
         createdAt: serverTimestamp(),
       })
@@ -102,26 +110,10 @@ function HomeCta() {
   )
 }
 
-function Room() {
-  const params = useParams()
-  const pinQuery = useQuery({
-    queryKey: ['pin'],
-    queryFn: async () => {
-      return await trpc.getRoomPin.query({ roomId: params.roomId! })
-    },
-  })
-  return (
-    <>
-      <div className="container">
-        <h1>Room PIN: {pinQuery.data?.pin || '…'}</h1>
-      </div>
-    </>
-  )
-}
-
 export interface Layout {
   children?: ReactNode
 }
+
 export function Layout(props: Layout) {
   return (
     <>

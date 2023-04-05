@@ -73,7 +73,7 @@ export const router = t.router({
         }
       }
       const allocateNewPin = async () => {
-        for (let length = 5; length < 10; length++) {
+        for (let length = 6; length < 10; length++) {
           const pin = Array.from(
             { length },
             () => Math.floor(Math.random() * 9) + 1,
