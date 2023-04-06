@@ -7,13 +7,11 @@ import {
   QuestionAnswersModel,
   QuestionModel,
   RoomModel,
-  UserModel,
   getActiveQuestionIdRef,
   getQuestionAnswersRef,
   getQuestionRef,
   getQuestionsRef,
   getRoomRef,
-  getUserRef,
   getUsersRef,
 } from './firebaseDatabase'
 import { child, push, serverTimestamp, set, update } from 'firebase/database'
@@ -24,6 +22,7 @@ import {
   useDatabaseObjectData,
 } from 'reactfire'
 import { ErrorAlert } from './ErrorAlert'
+import { UserName } from './UserName'
 
 export function Room() {
   const params = useParams()
@@ -691,14 +690,4 @@ export function ActiveQuestionConnector(props: ActiveQuestionConnector) {
     }
   }, [activeQuestion, activeQuestionRef, questionId])
   return <>{children(activeQuestion === questionId, toggle)}</>
-}
-
-export interface UserName {
-  roomId: string
-  userId: string
-}
-export function UserName(props: UserName) {
-  const userRef = getUserRef(props.roomId, props.userId)
-  const { data } = useDatabaseObjectData<UserModel>(userRef)
-  return <>{data?.displayName || props.userId}</>
 }
