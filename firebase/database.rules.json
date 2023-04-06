@@ -1,0 +1,28 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "environments": {
+      "$env": {
+        "rooms": {
+          "$roomId": {
+            ".validate": "newData.hasChild('ownerId')",
+            ".read": "data.child('ownerId').val() === auth.uid",
+            ".write": "(!data.exists() && auth.uid !== null) || (data.exists() && data.child('ownerId').val() === auth.uid)",
+            "ownerId": {
+              ".validate": "newData.val() === auth.uid"
+            }
+          }
+        },
+        "users": {
+          "$userId": {
+            ".read": "$userId === auth.uid",
+            "rooms": {
+            	".write": "$userId === auth.uid"
+            }
+          }
+        }
+      }
+    }
+  }
+}
