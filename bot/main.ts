@@ -29,6 +29,37 @@ router.post('/webhook/line', async (context) => {
   context.response.body = 'ok'
 })
 
+router.post('/inject', async (context) => {
+  if (!Deno.env.get('FIREBASE_DATABASE_EMULATOR_HOST')) {
+    log.warning(
+      'Tried to inject message in production mode',
+      context.request.ip,
+    )
+    context.response.status = 403
+    context.response.body = 'Forbidden'
+    return
+  }
+
+  const body = await context.request.body({ type: 'json' }).value
+  const uid = body.uid
+  const message = body.message
+  if (!uid || !message) {
+    context.response.status = 400
+    context.response.body = 'Bad request'
+    return
+  }
+
+  const result = await handle(
+    {
+      userId: uid,
+      text: message,
+      time: Date.now(),
+    },
+    { resolveDisplayName: async (userId) => 'Test user - ' + userId },
+  )
+  context.response.body = result
+})
+
 async function handleEvents(events: any[]) {
   for (const event of events) {
     try {
@@ -54,12 +85,14 @@ async function handleMessageEvent(event: any) {
 async function handleTextMessage(event: any) {
   const text = event.message.text.trim()
   const replyToken = event.replyToken
+  const time = event.timestamp
   const userId = event.source.userId
   const url = `https://api.line.me/v2/bot/message/reply`
   const result = await handle(
     {
       userId,
       text,
+      time,
     },
     {
       resolveDisplayName: async (userId) => {

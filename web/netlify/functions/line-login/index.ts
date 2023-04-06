@@ -22,6 +22,15 @@ export const handler: Handler = async (event, context): Promise<Response> => {
     }
   }
 
+  if (process.env.FIREBASE_AUTH_EMULATOR_HOST && params.uid) {
+    return handleProfile(
+      params.uid,
+      'Test user - ' + params.uid,
+      `https://api.dicebear.com/6.x/pixel-art-neutral/svg?seed=${params.uid}`,
+      { test: true },
+    )
+  }
+
   const code = params.code
 
   // Infer redirect URI from request Host header
@@ -72,21 +81,25 @@ export const handler: Handler = async (event, context): Promise<Response> => {
   ).data
 
   const uid = profile.userId
+  const displayName = profile.displayName
+  const photoURL = profile.pictureUrl
 
   // Try to create a user
+  return await handleProfile(uid, displayName, photoURL)
+}
+
+async function handleProfile(
+  uid: any,
+  displayName: any,
+  photoURL: any,
+  options: { test?: boolean } = {},
+) {
   try {
-    await admin.auth().createUser({
-      uid,
-      displayName: profile.displayName,
-      photoURL: profile.pictureUrl,
-    })
+    await admin.auth().createUser({ uid, displayName, photoURL })
   } catch (e: any) {
     // Update the user if it already exists
     if (e.code === 'auth/uid-already-exists') {
-      await admin.auth().updateUser(uid, {
-        displayName: profile.displayName,
-        photoURL: profile.pictureUrl,
-      })
+      await admin.auth().updateUser(uid, { displayName, photoURL })
     } else {
       throw e
     }
@@ -111,7 +124,7 @@ export const handler: Handler = async (event, context): Promise<Response> => {
       sessionStorage.setItem('firebaseCustomToken', ${JSON.stringify(
         customToken,
       )})
-      location.replace('/')
+      location.replace('/${options.test ? '?flags=test' : ''}')
     </script>
   </head>
   <body style="font-family: sans-serif">

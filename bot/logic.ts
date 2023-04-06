@@ -1,24 +1,37 @@
 import ky from 'https://esm.sh/ky@0.33.3'
 
-const dbSecret = Deno.env.get('FIREBASE_DB_SECRET')!
-const dbUrl =
-  'https://answerbuzzer-default-rtdb.asia-southeast1.firebasedatabase.app/environments/production'
-const db = ky.extend({
-  prefixUrl: dbUrl,
-})
+const dbClient = (() => {
+  const emu = Deno.env.get('FIREBASE_DATABASE_EMULATOR_HOST')
+  const dbUrl = emu
+    ? `http://${emu}/environments/production`
+    : 'https://answerbuzzer-default-rtdb.asia-southeast1.firebasedatabase.app/environments/production'
+  const db = ky.extend({
+    prefixUrl: dbUrl,
+    ...(emu ? { headers: { Authorization: 'Bearer owner' } } : {}),
+  })
+  const append = emu
+    ? `?ns=demo-ansr-default-rtdb`
+    : `?auth=${Deno.env.get('FIREBASE_DB_SECRET')!}`
+
+  return {
+    get: (path: string) => db.get(`${path}.json${append}`).json(),
+    put: (path: string, data: any) =>
+      db.put(`${path}.json${append}`, { json: data }),
+  }
+})()
 
 export interface HandleContext {
   resolveDisplayName(userId: string): Promise<string>
 }
 
 export async function handle(
-  input: { userId: string; text: string },
+  input: { userId: string; text: string; time: number },
   context: HandleContext,
 ) {
   const time = Date.now()
   const { userId, text } = input
   const userState: UserState =
-    (await db.get(`users/${userId}/state.json?auth=${dbSecret}`).json()) || {}
+    (await dbClient.get(`users/${userId}/state`)) || {}
   return userState.currentRoomId
     ? handleInRoom(userState.currentRoomId)
     : handleNotInRoom()
@@ -32,27 +45,23 @@ export async function handle(
       }
     }
 
-    const activeQuestionId = (await db
-      .get(`rooms/${roomId}/activeQuestionId.json?auth=${dbSecret}`)
-      .json()) as string | null
+    const activeQuestionId = (await dbClient.get(
+      `rooms/${roomId}/activeQuestionId`,
+    )) as string | null
     if (!activeQuestionId) {
       return `no active question right now`
     }
 
-    const myAnswer = (await db
-      .get(
-        `rooms/${roomId}/answers/${activeQuestionId}/${userId}.json?auth=${dbSecret}`,
-      )
-      .json()) as { choice: number } | null
+    const myAnswer = (await dbClient.get(
+      `rooms/${roomId}/answers/${activeQuestionId}/${userId}`,
+    )) as { choice: number } | null
     if (myAnswer) {
       return `you have already answered this question (your answer: ${myAnswer.choice})`
     }
 
-    const activeQuestion = (await db
-      .get(
-        `rooms/${roomId}/questions/${activeQuestionId}.json?auth=${dbSecret}`,
-      )
-      .json()) as { numChoices?: number } | null
+    const activeQuestion = (await dbClient.get(
+      `rooms/${roomId}/questions/${activeQuestionId}`,
+    )) as { numChoices?: number } | null
     if (!activeQuestion) {
       return `no active question right now...`
     }
@@ -66,9 +75,9 @@ export async function handle(
       return `invalid choice (accepted: ${acceptedChoices.join(', ')})`
     }
 
-    await db.put(
-      `rooms/${roomId}/answers/${activeQuestionId}/${userId}.json?auth=${dbSecret}`,
-      { json: { choice, createdAt: time } },
+    await dbClient.put(
+      `rooms/${roomId}/answers/${activeQuestionId}/${userId}`,
+      { choice, createdAt: time },
     )
     return `your answer (${choice}) has been recorded`
   }
@@ -85,9 +94,10 @@ export async function handle(
   }
   async function handleJoinRoom(pin: string, switching = false) {
     // Resolve the PIN to a room ID
-    const pinInfo = (await db
-      .get(`pins/${pin}.json?auth=${dbSecret}`)
-      .json()) as { roomId?: string; expiresAt: number } | null
+    const pinInfo = (await dbClient.get(`pins/${pin}`)) as {
+      roomId?: string
+      expiresAt: number
+    } | null
     if (!pinInfo?.roomId) {
       return `room with PIN R${pin} not found`
     }
@@ -98,24 +108,22 @@ export async function handle(
     const roomId = pinInfo.roomId
 
     // Check if the room is open for joining
-    const isOpen = (await db
-      .get(`rooms/${roomId}/open.json?auth=${dbSecret}`)
-      .json()) as boolean | null
+    const isOpen = (await dbClient.get(`rooms/${roomId}/open`)) as
+      | boolean
+      | null
     if (!isOpen) {
       return `room is not open for joining, sorry`
     }
 
     // Add the user info to the room
     const displayName = await context.resolveDisplayName(userId)
-    await db.put(
-      `rooms/${roomId}/users/${userId}/displayName.json?auth=${dbSecret}`,
-      { json: displayName },
+    await dbClient.put(
+      `rooms/${roomId}/users/${userId}/displayName`,
+      displayName,
     )
 
     // Update the user state
-    await db.put(`users/${userId}/state/currentRoomId.json?auth=${dbSecret}`, {
-      json: roomId,
-    })
+    await dbClient.put(`users/${userId}/state/currentRoomId`, roomId)
 
     return switching
       ? 'switched to a new room successfully! welcome!'
