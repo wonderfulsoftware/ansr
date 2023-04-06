@@ -24,6 +24,7 @@ import {
 import { ErrorAlert } from './ErrorAlert'
 import { UserName } from './UserName'
 import { FormGroup, FormHint } from './ui'
+import { calculateQuestionScore, scoresToRankingEntry } from './scoring'
 
 export function Room() {
   const params = useParams()
@@ -362,7 +363,7 @@ export function RoomQuestion() {
   )
 }
 
-type AnswerListItem = QuestionAnswersModel[string] & { userId: string }
+export type AnswerListItem = QuestionAnswersModel[string] & { userId: string }
 
 interface Question {
   roomId: string
@@ -613,35 +614,6 @@ export function RoundScoreTable(props: RoundScoreTable) {
       </tbody>
     </table>
   )
-}
-
-function calculateQuestionScore(
-  answers: AnswerListItem[],
-  question: QuestionModel,
-) {
-  const scores: Record<string, number> = {}
-
-  // Sort answers by time
-  const sortedAnswers = [...answers].sort((a, b) => a.createdAt - b.createdAt)
-
-  // Calculate scores. First person gets 100 points, second gets 99, etc.
-  let pointsToAward = 100
-  for (const answer of sortedAnswers) {
-    const correct = question.correctChoices?.[`choice${answer.choice}`]
-    if (correct) {
-      scores[answer.userId] = (scores[answer.userId] || 0) + pointsToAward
-      pointsToAward = Math.max(0, pointsToAward - 1)
-    }
-  }
-  return scores
-}
-function scoresToRankingEntry(scores: Record<string, number>) {
-  return Object.entries(scores)
-    .map(([userId, score]) => ({
-      userId,
-      score,
-    }))
-    .sort((a, b) => b.score - a.score)
 }
 
 export interface ActiveQuestionConnector {
