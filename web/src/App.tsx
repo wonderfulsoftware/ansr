@@ -1,11 +1,6 @@
 import { RouterProvider, createHashRouter } from 'react-router-dom'
-import {
-  Room,
-  RoomInfo,
-  RoomLeaderboard,
-  RoomQuestion,
-  RoomUsers,
-} from './Room'
+import { Room, RoomInfo, RoomLeaderboard, RoomUsers } from './Room'
+import { RoomQuestion } from './RoomQuestion'
 import { Home } from './Home'
 import { Layout } from './Layout'
 

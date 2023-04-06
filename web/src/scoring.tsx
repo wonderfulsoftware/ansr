@@ -1,5 +1,5 @@
 import { QuestionModel } from './firebaseDatabase'
-import { AnswerListItem } from './Room'
+import { AnswerListItem } from './RoomQuestion'
 
 export function calculateQuestionScore(
   answers: AnswerListItem[],
