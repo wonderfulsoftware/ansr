@@ -15,8 +15,10 @@ export function calculateQuestionScore(
   for (const answer of sortedAnswers) {
     const correct = question.correctChoices?.[`choice${answer.choice}`]
     if (correct) {
-      scores[answer.userId] = (scores[answer.userId] || 0) + pointsToAward
-      pointsToAward = Math.max(0, pointsToAward - 1)
+      if (pointsToAward > 0) {
+        scores[answer.userId] = (scores[answer.userId] || 0) + pointsToAward
+        pointsToAward = Math.max(0, pointsToAward - 1)
+      }
     }
   }
   return scores
