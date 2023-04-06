@@ -23,6 +23,7 @@ import {
   useDatabaseObject,
   useDatabaseObjectData,
 } from 'reactfire'
+import { ErrorAlert } from './ErrorAlert'
 
 export function Room() {
   const params = useParams()
@@ -700,11 +701,4 @@ export function UserName(props: UserName) {
   const userRef = getUserRef(props.roomId, props.userId)
   const { data } = useDatabaseObjectData<UserModel>(userRef)
   return <>{data?.displayName || props.userId}</>
-}
-
-export interface ErrorAlert {
-  error: any
-}
-export function ErrorAlert(props: ErrorAlert) {
-  return <div className="alert alert-danger">{String(props.error)}</div>
 }
