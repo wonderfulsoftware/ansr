@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app'
 import { connectAuthEmulator, getAuth } from 'firebase/auth'
 import { connectDatabaseEmulator, getDatabase } from 'firebase/database'
-import { isQueryFlagEnabled } from './QueryFlags'
+import { isQueryFlagEnabled } from './queryFlags'
 
 export const firebaseConfig = {
   apiKey: 'AIzaSyDjGDP1PYOhvoyo6c1rj8XjYk-cSp3p7M0',
