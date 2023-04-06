@@ -1,6 +1,12 @@
 import { clsx } from 'clsx'
 import { ReactNode } from 'react'
 
+export interface FormGroup {
+  label: ReactNode
+  children?: ReactNode
+  /** Remove the top padding from the label (required for the label to align with checkbox/radio buttons properly) */
+  pt0?: boolean
+}
 export function FormGroup(props: FormGroup) {
   return (
     <div className="row">

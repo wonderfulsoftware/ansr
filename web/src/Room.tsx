@@ -615,12 +615,6 @@ export function RoundScoreTable(props: RoundScoreTable) {
   )
 }
 
-export interface FormGroup {
-  label: ReactNode
-  children?: ReactNode
-  /** Remove the top padding from the label (required for the label to align with checkbox/radio buttons properly) */
-  pt0?: boolean
-}
 function calculateQuestionScore(
   answers: AnswerListItem[],
   question: QuestionModel,
