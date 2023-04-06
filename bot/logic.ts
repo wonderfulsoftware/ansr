@@ -108,12 +108,12 @@ export async function handle(
     const roomId = pinInfo.roomId
 
     // Check if the room is open for joining
-    const isOpen = (await dbClient.get(`rooms/${roomId}/open`)) as
-      | boolean
-      | null
-    if (!isOpen) {
-      return `room is not open for joining, sorry`
-    }
+    // const isOpen = (await dbClient.get(`rooms/${roomId}/open`)) as
+    //   | boolean
+    //   | null
+    // if (!isOpen) {
+    //   return `room is not open for joining, sorry`
+    // }
 
     // Add the user info to the room
     const displayName = await context.resolveDisplayName(userId)

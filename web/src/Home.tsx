@@ -156,5 +156,5 @@ export function RoomPinInspector(props: RoomPinInspector) {
   const data = useDatabaseObjectData<string>(
     child(getRoomRef(props.roomId), 'pin'),
   )
-  return <>{data.data || '(no pin)'}</>
+  return <>{data.data ? `R${data.data}` : '(no pin)'}</>
 }

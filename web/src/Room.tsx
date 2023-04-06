@@ -120,6 +120,7 @@ export function RoomNav(props: RoomNav) {
           className="nav-link"
           disabled={newQuestion.isLoading}
           onClick={() => newQuestion.mutate()}
+          aria-label="Create new question"
         >
           <Icon inline icon="bi:plus" /> Question
         </button>
@@ -171,7 +172,11 @@ export function RoomInfo() {
             </div>
             <div className="fs-2">Room PIN</div>
             <div className="fs-1">
-              <code className="text-white" style={{ fontSize: '1.5em' }}>
+              <code
+                className="text-white"
+                style={{ fontSize: '1.5em' }}
+                data-testid="Room PIN"
+              >
                 {pin}
               </code>
             </div>
