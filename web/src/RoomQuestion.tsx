@@ -249,11 +249,19 @@ export function AnswerChart(props: AnswerChart) {
         const count = tally[n] || 0
         const height = (2 + 98 * (count / max)).toFixed(2) + '%'
         const correct = props.correctChoices?.[`choice${n}`]
+        const label =
+          count === 0
+            ? `No one answered ${n}`
+            : count === 1
+            ? `1 person answered ${n}`
+            : `${count} people answered ${n}`
         return (
           <div
             key={n}
             className="d-flex flex-column text-center"
             style={{ width: '2.5em' }}
+            data-testid="Answer chart bar"
+            aria-label={label}
           >
             <div className="flex-grow-1 d-flex flex-column justify-content-end">
               <div
