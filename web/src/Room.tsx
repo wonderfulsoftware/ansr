@@ -11,11 +11,7 @@ import {
 } from './firebaseDatabase'
 import { push, serverTimestamp } from 'firebase/database'
 import { Fragment, ReactNode, useMemo } from 'react'
-import {
-  useDatabaseListData,
-  useDatabaseObject,
-  useDatabaseObjectData,
-} from 'reactfire'
+import { useDatabaseListData, useDatabaseObjectData } from './nanofire'
 import { UserName } from './UserName'
 import { calculateQuestionScore, scoresToRankingEntry } from './scoring'
 import { AnswerListItem } from './RoomQuestion'
@@ -40,7 +36,7 @@ interface RoomDataSubscriber {
   roomId: string
 }
 function RoomDataSubscriber(props: RoomDataSubscriber) {
-  useDatabaseObject(getRoomRef(props.roomId))
+  useDatabaseObjectData(getRoomRef(props.roomId))
   return <></>
 }
 
@@ -245,9 +241,7 @@ export function RoomLeaderboard() {
   const result = useMemo(() => {
     if (!data) return []
     const scores: Record<string, number> = {}
-    for (const [questionId, question] of Object.entries(
-      roomData.data.questions || {},
-    )) {
+    for (const [questionId, question] of Object.entries(data.questions || {})) {
       const answers = Object.entries(data.answers?.[questionId] || {}).map(
         ([userId, answer]): AnswerListItem => {
           return { userId, ...answer }

@@ -1,5 +1,6 @@
 import { Icon } from '@iconify-icon/react'
-import { useDatabaseListData, useDatabaseObjectData, useUser } from 'reactfire'
+import { useUser } from 'reactfire'
+import { useDatabaseListData, useDatabaseObjectData } from './nanofire'
 import { db } from './firebase'
 import { Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'

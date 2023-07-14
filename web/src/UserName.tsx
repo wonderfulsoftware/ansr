@@ -1,5 +1,5 @@
 import { UserModel, getUserRef } from './firebaseDatabase'
-import { useDatabaseObjectData } from 'reactfire'
+import { useDatabaseObjectData } from './nanofire'
 
 export interface UserName {
   roomId: string

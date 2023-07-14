@@ -1,6 +1,6 @@
 import { getQuestionsRef } from './firebaseDatabase'
 import { ReactNode } from 'react'
-import { useDatabaseListData } from 'reactfire'
+import { useDatabaseListData } from './nanofire'
 
 export interface QuestionList {
   roomId: string

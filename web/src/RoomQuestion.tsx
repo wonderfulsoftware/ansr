@@ -10,7 +10,7 @@ import {
 } from './firebaseDatabase'
 import { child, set, update } from 'firebase/database'
 import { ReactNode, useCallback, useMemo, useState } from 'react'
-import { useDatabaseListData, useDatabaseObjectData } from 'reactfire'
+import { useDatabaseListData, useDatabaseObjectData } from './nanofire'
 import { ErrorAlert } from './ErrorAlert'
 import { UserName } from './UserName'
 import { FormGroup, FormHint } from './ui'

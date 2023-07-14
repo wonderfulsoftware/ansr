@@ -29,7 +29,6 @@ test('can see people joining', async ({ page }) => {
   await line('guest1', room.pin)
   await line('guest2', room.pin)
   await line('guest3', room.pin)
-  await HACK_reload(page)
   await expect(page.locator('body')).toContainText('guest1')
   await expect(page.locator('body')).toContainText('guest2')
   await expect(page.locator('body')).toContainText('guest3')
@@ -64,9 +63,6 @@ test('can accept answers', async ({ page }) => {
     await line('guest3', '4')
     await line('guest4', '1')
     await line('guest5', '5')
-    if (attempt++ > 1) {
-      await HACK_reload(page)
-    }
     await expect(page.getByText('Show answers (4)')).toBeVisible({
       timeout: 1000,
     })
@@ -78,12 +74,6 @@ test('can accept answers', async ({ page }) => {
   await expect(bar.nth(2)).toHaveAttribute('aria-label', '1 person answered 3')
   await expect(bar.nth(3)).toHaveAttribute('aria-label', '1 person answered 4')
 })
-
-async function HACK_reload(page: Page) {
-  // There is a bit of problem with the emulator where things do not display in real-time
-  // so we need to reload the page to see the latest state.
-  await page.reload()
-}
 
 class AnsrApp {
   constructor(private page: Page) {}
@@ -117,7 +107,6 @@ class AnsrRoom {
   async createQuestion() {
     await this.page.getByRole('button', { name: 'Create new question' }).click()
     await expect(this.page.locator('body')).toContainText('Question #')
-    await HACK_reload(this.page)
   }
 }
 
