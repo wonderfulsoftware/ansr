@@ -13,5 +13,25 @@
       "enabled": true
     },
     "singleProjectMode": true
+  },
+  "functions": [
+    {
+      "source": "../bot-functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint",
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ]
+    }
+  ],
+  "hosting": {
+    "public": "../web/dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
   }
 }

@@ -1,1 +1,5 @@
-{"devDependencies":{"firebase-tools":"^12.4.4"}}
+{
+  "devDependencies": {
+    "firebase-tools": "^12.4.4"
+  }
+}
