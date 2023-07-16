@@ -1,4 +1,3 @@
-import 'google-application-credentials-base64'
 import * as admin from 'firebase-admin'
 
 admin.initializeApp({
