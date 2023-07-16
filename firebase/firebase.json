@@ -32,6 +32,14 @@
   ],
   "hosting": {
     "public": "../web/dist",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "/trpc/**",
+        "function": "trpc",
+        "region": "asia-southeast1",
+        "pinTag": true
+      }
+    ]
   }
 }
