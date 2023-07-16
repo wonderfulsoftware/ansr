@@ -16,7 +16,7 @@
   },
   "functions": [
     {
-      "source": "../backend",
+      "source": "backend",
       "codebase": "default",
       "ignore": [
         "node_modules",
@@ -31,7 +31,7 @@
     }
   ],
   "hosting": {
-    "public": "../web/dist",
+    "public": "web/dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {

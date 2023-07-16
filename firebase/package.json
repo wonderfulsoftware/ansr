@@ -1,8 +1,0 @@
-{
-  "devDependencies": {
-    "firebase-tools": "^12.4.4"
-  },
-  "scripts": {
-    "dev": "firebase emulators:start --project demo-ansr"
-  }
-}
