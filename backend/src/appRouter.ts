@@ -1,15 +1,11 @@
 import { TRPCError, initTRPC } from '@trpc/server'
 import { z } from 'zod'
-import { Env } from '@(-.-)/env'
-import axios, { isAxiosError } from 'axios'
+import axios from 'axios'
 import { admin } from './admin'
-
-const env = Env(
-  z.object({
-    LINE_LOGIN_CLIENT_ID: z.string(),
-    LINE_LOGIN_CLIENT_SECRET: z.string(),
-  }),
-)
+import { env } from './env'
+import { handleAxiosError } from './handleAxiosError'
+import * as logger from 'firebase-functions/logger'
+import { handle } from './logic'
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface Context {}
@@ -177,6 +173,45 @@ export const appRouter = t.router({
         }
       }),
   }),
+  testing: t.router({
+    injectMessage: t.procedure
+      .input(
+        z.object({
+          uid: z.string().regex(/^tester_(\S+)$/i),
+          message: z.string(),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        if (!process.env.FIREBASE_DATABASE_EMULATOR_HOST) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'This endpoint is only available in development mode',
+          })
+        }
+
+        const { uid, message } = input
+        if (!uid || !message) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Missing uid or message',
+          })
+        }
+
+        const result = await handle(
+          {
+            userId: uid,
+            text: message,
+            time: Date.now(),
+          },
+          { resolveDisplayName: async (userId) => 'Test user - ' + userId },
+        )
+        logger.info(
+          `uid: ${uid}, message: ${JSON.stringify(
+            message,
+          )}, result: ${JSON.stringify(result)}`,
+        )
+      }),
+  }),
 })
 
 export type AppRouter = typeof appRouter
@@ -204,17 +239,6 @@ async function handleProfile(
   // Create a custom token
   const customToken = await admin.auth().createCustomToken(uid)
   return { customToken }
-}
-
-function handleAxiosError(explanation: string) {
-  return (error: unknown) => {
-    if (!isAxiosError(error)) {
-      throw error
-    }
-    console.error(explanation, error.config?.url, error.response?.data)
-    error.message = `${explanation}: ${error.message}`
-    throw error
-  }
 }
 
 function getPinRef(pin: string) {
