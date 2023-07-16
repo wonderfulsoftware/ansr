@@ -7,9 +7,9 @@ export const trpc = createTRPCProxyClient<AppRouter>({
   links: [
     httpBatchLink({
       url:
-        location.hostname === 'localhost'
+        location.hostname === 'localhost' || location.hostname === '127.0.0.1'
           ? 'http://localhost:5001/demo-ansr/asia-southeast1/trpc'
-          : '/trpc',
+          : 'https://trpc-oqmzt3ofxq-as.a.run.app',
       async headers() {
         const token = auth.currentUser?.getIdToken()
         return token ? { Authorization: `Bearer ${token}` } : {}
