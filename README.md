@@ -6,7 +6,7 @@
 
 1. **Quiz creator creates a room.**
 
-   - Go to <https://ansr.netlify.app/>
+   - Go to <https://answerbuzzer.web.app/>
    - Log in with LINE
    - Click **Create a new room**
    - The information for joining the room will be displayed (LINE ID, room ID, and a QR code)
