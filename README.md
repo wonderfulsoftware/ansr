@@ -38,12 +38,12 @@
 ## Develop locally
 
 ```sh
-# Tab 1 - Firebase Emulators
-pnpm -C firebase exec firebase emulators:start --project demo-ansr
+# Tab 1 - Web
+pnpm -C web run dev
 
-# Tab 2 - Netlify Dev
-pnpm -C web exec netlify dev --target-port 47522 --offline
+# Tab 2 - Functions
+pnpm -C backend run dev
 
-# Tab 3 - Deno
-deno run --allow-env --allow-net ./bot/main.ts
+# Tab 3 - Firebase Emulators
+pnpm -C firebase run dev
 ```

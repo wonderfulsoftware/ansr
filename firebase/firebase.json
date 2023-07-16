@@ -16,7 +16,7 @@
   },
   "functions": [
     {
-      "source": "../bot-functions",
+      "source": "../backend",
       "codebase": "default",
       "ignore": [
         "node_modules",
