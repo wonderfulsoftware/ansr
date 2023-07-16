@@ -3,10 +3,10 @@ import { Icon } from '@iconify-icon/react'
 import { useUser } from 'reactfire'
 import { signOut } from 'firebase/auth'
 import { auth } from './firebase'
+import { useAuthActions } from './useAuthActions'
+import { Outlet } from 'react-router-dom'
 
-export interface Layout {
-  children?: ReactNode
-}
+export interface Layout {}
 export function Layout(props: Layout) {
   return (
     <>
@@ -25,12 +25,13 @@ export function Layout(props: Layout) {
           </div>
         </div>
       </header>
-      {props.children}
+      <Outlet />
     </>
   )
 }
 export function AuthBar() {
   const { status, data: user } = useUser()
+  const { logIn } = useAuthActions()
 
   if (status !== 'success') {
     return <></>
@@ -41,7 +42,7 @@ export function AuthBar() {
       <button
         type="button"
         className="btn btn-outline-light me-2"
-        onClick={() => location.replace('/.netlify/functions/line-login')}
+        onClick={logIn}
       >
         <Icon inline icon="simple-icons:line" /> Login
       </button>

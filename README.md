@@ -38,12 +38,56 @@
 ## Develop locally
 
 ```sh
-# Tab 1 - Firebase Emulators
-pnpm -C firebase exec firebase emulators:start --project demo-ansr
+# Tab 1 - Web
+pnpm -C web run dev
 
-# Tab 2 - Netlify Dev
-pnpm -C web exec netlify dev --target-port 47522 --offline
+# Tab 2 - Functions
+pnpm -C backend run dev
 
-# Tab 3 - Deno
-deno run --allow-env --allow-net ./bot/main.ts
+# Tab 3 - Firebase Emulators
+pnpm run emulators
+```
+
+Access the web at <http://localhost:47522/?flags=test>
+
+- The `?flags=test` instructs the web to use the local Firebase emulators instead of the production Firebase project.
+
+## Develop with a LINE Bot and LINE Login
+
+You need to create:
+
+- LINE Login channel
+- Messaging API channel
+
+Create `backend/.env` with the following content:
+
+```sh
+# Obtain value from LINE Login channel
+LINE_LOGIN_CLIENT_ID=
+LINE_LOGIN_CLIENT_SECRET=
+
+# Obtain value from Messaging API channel
+LINE_CHANNEL_ACCESS_TOKEN=
+
+# Generate a random string with `openssl rand -hex 32`
+LINE_WEBHOOK_SECRET_KEY=
+```
+
+Run a reverse proxy to forward requests to the local Firebase functions emulator:
+
+```sh
+# Example: Using Cloudflare Tunnel
+cloudflared tunnel --url http://localhost:5001
+```
+
+Update the webhook URL in the LINE Messaging API channel settings to the URL of the reverse proxy:
+
+```
+https://<domain>/demo-ansr/asia-southeast1/line?key=<LINE_WEBHOOK_SECRET_KEY>
+```
+
+### Deploying rich menus
+
+```sh
+pnpm -C backend exec tsx scripts/updateRichMenu.ts
 ```

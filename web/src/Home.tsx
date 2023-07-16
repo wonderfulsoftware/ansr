@@ -16,6 +16,7 @@ import {
 } from 'firebase/database'
 import { getRoomRef, getRoomsRef } from './firebaseDatabase'
 import { UserCount } from './Room'
+import { useAuthActions } from './useAuthActions'
 
 export function Home() {
   return (
@@ -33,6 +34,7 @@ export function Home() {
 function HomeCta() {
   const { status, data: user } = useUser()
   const navigate = useNavigate()
+  const { logIn } = useAuthActions()
   const mutation = useMutation({
     mutationFn: async () => {
       if (!user) {
@@ -78,12 +80,9 @@ function HomeCta() {
         </p>
       ) : (
         <p>
-          <a
-            href="/.netlify/functions/line-login"
-            className="btn btn-outline-light"
-          >
+          <button className="btn btn-outline-light" onClick={logIn}>
             <Icon inline icon="simple-icons:line" /> Login with LINE
-          </a>
+          </button>
         </p>
       )}
     </>

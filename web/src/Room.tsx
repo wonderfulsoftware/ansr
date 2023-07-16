@@ -44,7 +44,7 @@ function useRoomPin(roomId: string) {
   const pin = useQuery({
     queryKey: ['pin'],
     queryFn: async () => {
-      return await trpc.getRoomPin.query({ roomId: roomId })
+      return await trpc.rooms.getRoomPin.query({ roomId })
     },
   }).data?.pin
   return pin ? `R${pin}` : undefined
