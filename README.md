@@ -47,3 +47,5 @@ pnpm -C backend run dev
 # Tab 3 - Firebase Emulators
 pnpm -C firebase run dev
 ```
+
+- Access the web at <http://localhost:47522/?flags=test>

@@ -10,12 +10,24 @@ importers:
 
   backend:
     dependencies:
+      '@(-.-)/env':
+        specifier: ^0.3.2
+        version: 0.3.2(zod@3.21.4)
+      '@trpc/server':
+        specifier: ^10.34.0
+        version: 10.34.0
+      axios:
+        specifier: ^1.4.0
+        version: 1.4.0(debug@4.3.4)
       firebase-admin:
         specifier: ^11.8.0
         version: 11.10.1
       firebase-functions:
         specifier: ^4.3.1
         version: 4.3.1(firebase-admin@11.10.1)
+      zod:
+        specifier: ^3.21.4
+        version: 3.21.4
     devDependencies:
       '@typescript-eslint/eslint-plugin':
         specifier: ^5.12.0
@@ -29,6 +41,9 @@ importers:
       eslint-config-google:
         specifier: ^0.14.0
         version: 0.14.0(eslint@8.9.0)
+      eslint-config-prettier:
+        specifier: ^8.8.0
+        version: 8.8.0(eslint@8.9.0)
       eslint-plugin-import:
         specifier: ^2.25.4
         version: 2.25.4(@typescript-eslint/parser@5.12.0)(eslint@8.9.0)
@@ -147,6 +162,14 @@ importers:
         version: 4.4.4(@types/node@18.15.11)
 
 packages:
+
+  /@(-.-)/env@0.3.2(zod@3.21.4):
+    resolution: {integrity: sha512-7KPrDKsq6ADQdBwEuPMNIVoo89/wKLMeDzaCKqS/cujuj0TW3INB/gw7g0Gz4/I4T/JZkS66p6/mKK97YR/rvw==}
+    peerDependencies:
+      zod: '>=3.0.0'
+    dependencies:
+      zod: 3.21.4
+    dev: false
 
   /@aashutoshrathi/word-wrap@1.2.6:
     resolution: {integrity: sha512-1Yjs2SvM8TflER/OD3cOjhWWOZb58A2t7wpE2S9XfBYTiIl+XFhQG2bjy4Pu1I+EAlCNUzRDYDdFwFYUKvXcIA==}
@@ -6238,6 +6261,15 @@ packages:
     engines: {node: '>=0.10.0'}
     peerDependencies:
       eslint: '>=5.16.0'
+    dependencies:
+      eslint: 8.9.0
+    dev: true
+
+  /eslint-config-prettier@8.8.0(eslint@8.9.0):
+    resolution: {integrity: sha512-wLbQiFre3tdGgpDv67NQKnJuTlcUVYHas3k+DZCc2U2BadthoEY4B7hLPvAxaqdyOGCzuLfii2fqGph10va7oA==}
+    hasBin: true
+    peerDependencies:
+      eslint: '>=7.0.0'
     dependencies:
       eslint: 8.9.0
     dev: true
