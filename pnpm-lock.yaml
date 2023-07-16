@@ -6,7 +6,11 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      firebase-tools:
+        specifier: ^12.4.4
+        version: 12.4.4
 
   backend:
     dependencies:
@@ -71,12 +75,6 @@ importers:
       typescript:
         specifier: ^4.9.0
         version: 4.9.5
-
-  firebase:
-    devDependencies:
-      firebase-tools:
-        specifier: ^12.4.4
-        version: 12.4.4
 
   qa:
     dependencies:
