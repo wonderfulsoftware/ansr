@@ -130,9 +130,6 @@ importers:
       firebase-admin:
         specifier: ^11.10.1
         version: 11.10.1
-      google-application-credentials-base64:
-        specifier: ^0.0.0
-        version: 0.0.0
       lazy-strict-env:
         specifier: ^0.3.1
         version: 0.3.1(zod@3.21.4)
@@ -8089,10 +8086,6 @@ packages:
     dependencies:
       minimist: 1.2.8
     dev: true
-
-  /google-application-credentials-base64@0.0.0:
-    resolution: {integrity: sha512-qg+7+CFYdDibieiyGwA1DYPO5RC22S6+iNNvgEYUo0Hu1ULGH31bLWGCXVKCkwwk1HqhHlR8zHCfUTyG8igD2A==}
-    dev: false
 
   /google-auth-library@7.14.1:
     resolution: {integrity: sha512-5Rk7iLNDFhFeBYc3s8l1CqzbEBcdhwR193RlD4vSNFajIcINKI8W8P0JLmBpwymHqqWbX34pJDQu39cSy/6RsA==}
