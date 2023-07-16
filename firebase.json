@@ -37,8 +37,7 @@
       {
         "source": "/trpc/**",
         "function": "trpc",
-        "region": "asia-southeast1",
-        "pinTag": true
+        "region": "asia-southeast1"
       }
     ]
   }
