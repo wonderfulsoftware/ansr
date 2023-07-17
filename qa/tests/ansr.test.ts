@@ -1,5 +1,14 @@
 import { test, expect, Page } from '@playwright/test'
-import axios from 'axios'
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client'
+import type { AppRouter } from '../../backend/src/appRouter'
+
+export const trpc = createTRPCProxyClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://127.0.0.1:5001/demo-ansr/asia-southeast1/trpc',
+    }),
+  ],
+})
 
 test('log in button is shown when not signed in', async ({ page }) => {
   const app = new AnsrApp(page)
@@ -9,13 +18,13 @@ test('log in button is shown when not signed in', async ({ page }) => {
 
 test('can sign in', async ({ page }) => {
   const app = new AnsrApp(page)
-  await app.login('host')
-  await expect(page.locator('body')).toContainText('Test user - host')
+  await app.login('tester_host')
+  await expect(page.locator('body')).toContainText('Test user - tester_host')
 })
 
 test('can see recent room', async ({ page }) => {
   const app = new AnsrApp(page)
-  await app.login('host' + new Date().getTime())
+  await app.login('tester_host' + new Date().getTime())
   const room = await app.createNewRoom()
   await app.go()
   await expect(page.locator('body')).toContainText('Recent rooms')
@@ -26,12 +35,12 @@ test('can see people joining', async ({ page }) => {
   const app = new AnsrApp(page)
   const room = await app.setupRoom()
   await room.seeUsers()
-  await line('guest1', room.pin)
-  await line('guest2', room.pin)
-  await line('guest3', room.pin)
-  await expect(page.locator('body')).toContainText('guest1')
-  await expect(page.locator('body')).toContainText('guest2')
-  await expect(page.locator('body')).toContainText('guest3')
+  await line('tester_guest1', room.pin)
+  await line('tester_guest2', room.pin)
+  await line('tester_guest3', room.pin)
+  await expect(page.locator('body')).toContainText('tester_guest1')
+  await expect(page.locator('body')).toContainText('tester_guest2')
+  await expect(page.locator('body')).toContainText('tester_guest3')
 })
 
 test('can create question', async ({ page }) => {
@@ -48,21 +57,21 @@ test('can create question', async ({ page }) => {
 test('can accept answers', async ({ page }) => {
   const app = new AnsrApp(page)
   const room = await app.setupRoom()
-  await line('guest1', room.pin)
-  await line('guest2', room.pin)
-  await line('guest3', room.pin)
-  await line('guest4', room.pin)
-  await line('guest5', room.pin)
+  await line('tester_guest1', room.pin)
+  await line('tester_guest2', room.pin)
+  await line('tester_guest3', room.pin)
+  await line('tester_guest4', room.pin)
+  await line('tester_guest5', room.pin)
 
   await room.createQuestion()
   await page.getByLabel('Active & accepting answers').click()
   let attempt = 1
   await expect(async () => {
-    await line('guest1', '3')
-    await line('guest2', '1')
-    await line('guest3', '4')
-    await line('guest4', '1')
-    await line('guest5', '5')
+    await line('tester_guest1', '3')
+    await line('tester_guest2', '1')
+    await line('tester_guest3', '4')
+    await line('tester_guest4', '1')
+    await line('tester_guest5', '5')
     await expect(page.getByText('Show answers (4)')).toBeVisible({
       timeout: 1000,
     })
@@ -78,11 +87,11 @@ test('can accept answers', async ({ page }) => {
 class AnsrApp {
   constructor(private page: Page) {}
   async go() {
-    await this.page.goto('http://localhost:8888/?flags=test')
+    await this.page.goto('http://localhost:47522/?flags=test')
   }
-  async login(uid: string = 'host') {
+  async login(uid: string = 'tester_host') {
     await this.page.goto(
-      `http://localhost:8888/.netlify/functions/line-login?uid=${uid}`,
+      `http://localhost:47522/?flags=test&code=${uid}&state=test#/auth/callback`,
     )
   }
   async createNewRoom() {
@@ -111,11 +120,5 @@ class AnsrRoom {
 }
 
 async function line(uid: string, message: string) {
-  await axios
-    .post(`http://127.0.0.1:4752/inject`, { uid, message })
-    .catch((e: any) => {
-      const data = e?.response?.data
-      e.message = `${e.message} ${data}`
-      throw e
-    })
+  await trpc.testing.injectMessage.mutate({ uid, message })
 }

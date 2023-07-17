@@ -1,7 +1,7 @@
 name: Playwright Tests
 on:
   push:
-    branches: [main, emu]
+    branches: [main]
   pull_request:
     branches: [main]
 jobs:
@@ -12,21 +12,20 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: pnpm/action-setup@v2
-        with:
-          version: latest
       - uses: actions/setup-node@v3
         with:
           node-version: 18
           cache: pnpm
-      - name: Install dependencies
-        run: pnpm -C qa install
+      - run: pnpm install
+      - run: pnpm -C web build
+      - run: pnpm -C backend build
       - name: Install Playwright Browsers
-        run: pnpm exec playwright install --with-deps
+        run: pnpm -C qa exec playwright install --with-deps
       - name: Run Playwright tests
-        run: pnpm exec playwright test
+        run: pnpm -C qa exec playwright test
       - uses: actions/upload-artifact@v3
         if: always()
         with:
           name: playwright-report
-          path: playwright-report/
+          path: qa/playwright-report/
           retention-days: 30

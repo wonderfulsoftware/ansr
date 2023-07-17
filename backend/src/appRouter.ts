@@ -46,6 +46,22 @@ export const appRouter = t.router({
         }),
       )
       .mutation(async ({ input }) => {
+        if (input.code.startsWith('tester_')) {
+          if (!process.env.FIREBASE_DATABASE_EMULATOR_HOST) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message:
+                'Logging in as tester is only available in development mode',
+            })
+          }
+          const uid = input.code
+          return handleProfile(
+            uid,
+            'Test user - ' + uid,
+            `https://api.dicebear.com/6.x/pixel-art-neutral/svg?seed=${uid}`,
+          )
+        }
+
         // Exchange code for access token
         const accessToken = (
           await axios
